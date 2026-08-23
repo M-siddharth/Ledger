@@ -75,3 +75,4 @@ supabase/
 ## Costs
 
 Supabase and Vercel free tiers comfortably cover personal or small-group use.
+
