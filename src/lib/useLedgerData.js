@@ -9,6 +9,12 @@ export function useLedgerData(user) {
   const [debts, setDebts] = useState([]);
   const [recurring, setRecurring] = useState([]);
   const [income, setIncome] = useState([]);
+  const [adjustments, setAdjustments] = useState([]);
+  const [transfers, setTransfers] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [savingsGoals, setSavingsGoals] = useState([]);
+  const [customCategories, setCustomCategories] = useState([]);
+  const [customPaymentMethods, setCustomPaymentMethods] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
@@ -25,6 +31,20 @@ export function useLedgerData(user) {
     if (!d.error) setDebts(d.data || []);
     if (!r.error) setRecurring(r.data || []);
     if (!i.error) setIncome(i.data || []);
+    const [a, t, b, g, cc, pm] = await Promise.all([
+      supabase.from("balance_adjustments").select("*").order("created_at", { ascending: false }),
+      supabase.from("balance_transfers").select("*").order("created_at", { ascending: false }),
+      supabase.from("budgets").select("*").order("created_at", { ascending: false }),
+      supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
+      supabase.from("custom_categories").select("*").order("name"),
+      supabase.from("custom_payment_methods").select("*").order("name"),
+    ]);
+    if (!a.error) setAdjustments(a.data || []);
+    if (!t.error) setTransfers(t.data || []);
+    if (!b.error) setBudgets(b.data || []);
+    if (!g.error) setSavingsGoals(g.data || []);
+    if (!cc.error) setCustomCategories(cc.data || []);
+    if (!pm.error) setCustomPaymentMethods(pm.data || []);
     if (!s.error && s.data) {
       setSettings({ manual_datetime: s.data.manual_datetime, recent_spends_count: s.data.recent_spends_count });
     }
@@ -38,6 +58,37 @@ export function useLedgerData(user) {
     setSettings(next); // optimistic
     const { error } = await supabase.from("user_settings").upsert({ user_id: user.id, ...next });
     if (error) await loadAll();
+    return error;
+  };
+
+  const addBalanceAdjustment = async (payload) => {
+    const { error } = await supabase.from("balance_adjustments").insert({ user_id: user.id, ...payload });
+    if (!error) await loadAll();
+    return error;
+  };
+  const addTransfer = async (payload) => {
+    const { error } = await supabase.rpc("ledger_transfer", { p_amount: Number(payload.amount), p_from_method: payload.from_method, p_to_method: payload.to_method, p_notes: payload.notes || null });
+    if (!error) await loadAll();
+    return error;
+  };
+  const addBudget = async (payload) => {
+    const { error } = await supabase.from("budgets").upsert({ user_id: user.id, ...payload }, { onConflict: "user_id,category,month_start" });
+    if (!error) await loadAll();
+    return error;
+  };
+  const addSavingsGoal = async (payload) => {
+    const { error } = await supabase.from("savings_goals").insert({ user_id: user.id, ...payload });
+    if (!error) await loadAll();
+    return error;
+  };
+  const deleteSavingsGoal = async (id) => {
+    const { error } = await supabase.from("savings_goals").delete().eq("id", id);
+    if (!error) await loadAll();
+    return error;
+  };
+  const saveCustomLabel = async (table, payload) => {
+    const { error } = await supabase.from(table).insert({ user_id: user.id, ...payload });
+    if (!error) await loadAll();
     return error;
   };
 
@@ -164,8 +215,14 @@ export function useLedgerData(user) {
     const cashSpent = expenses.filter((e) => e.paid && e.method === "cash").reduce((s, e) => s + Number(e.amount), 0);
     const digitalSpent = expenses.filter((e) => e.paid && e.method === "digital").reduce((s, e) => s + Number(e.amount), 0);
 
-    const cashBalance = cashIncome - cashSpent;
-    const digitalBalance = digitalIncome - digitalSpent;
+    const cashAdjustments = adjustments.filter((a) => a.method === "cash").reduce((s, a) => s + Number(a.amount), 0);
+    const digitalAdjustments = adjustments.filter((a) => a.method === "digital").reduce((s, a) => s + Number(a.amount), 0);
+    const cashTransferOut = transfers.filter((t) => t.from_method === "cash").reduce((s, t) => s + Number(t.amount), 0);
+    const cashTransferIn = transfers.filter((t) => t.to_method === "cash").reduce((s, t) => s + Number(t.amount), 0);
+    const digitalTransferOut = transfers.filter((t) => t.from_method === "digital").reduce((s, t) => s + Number(t.amount), 0);
+    const digitalTransferIn = transfers.filter((t) => t.to_method === "digital").reduce((s, t) => s + Number(t.amount), 0);
+    const cashBalance = cashIncome - cashSpent + cashAdjustments - cashTransferOut + cashTransferIn;
+    const digitalBalance = digitalIncome - digitalSpent + digitalAdjustments - digitalTransferOut + digitalTransferIn;
     const totalBalance = cashBalance + digitalBalance;
 
     const activeRecurring = recurring
@@ -181,11 +238,11 @@ export function useLedgerData(user) {
       recurring.filter((r) => r.active && r.frequency === "yearly").reduce((s, r) => s + Number(r.amount) / 12, 0);
 
     return {
-      totalSpent, paid, unpaid, owedByMe, owedToMe, netDebt: owedByMe - owedToMe,
+      totalSpent, paid, unpaid, owedByMe, owedToMe, netDebt: owedToMe - owedByMe,
       totalIncome, cashBalance, digitalBalance, totalBalance,
       activeRecurring, upcoming30, monthlyRecurringTotal,
     };
-  }, [expenses, debts, recurring, income]);
+  }, [expenses, debts, recurring, income, adjustments, transfers]);
 
   // Combined chronological money-movement feed for the Income/Balance tab
   const balanceHistory = useMemo(() => {
@@ -229,12 +286,13 @@ export function useLedgerData(user) {
   }, [expenses, income, debts]);
 
   return {
-    expenses, debts, recurring, income, loading, stats, balanceHistory, insights,
+    expenses, debts, recurring, income, adjustments, transfers, budgets, savingsGoals, customCategories, customPaymentMethods, loading, stats, balanceHistory, insights,
     settings, saveSettings,
     addExpense, updateExpense, deleteExpense,
     addIncome, deleteIncome,
     addDebt, deleteDebt, settleDebt, unsettleDebt,
     addRecurring, toggleRecurringActive, deleteRecurring,
+    addBalanceAdjustment, addTransfer, addBudget, addSavingsGoal, deleteSavingsGoal, saveCustomLabel,
     refresh: loadAll,
   };
 }
