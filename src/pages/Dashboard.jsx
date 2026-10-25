@@ -11,7 +11,7 @@ const MODES = [
 ];
 
 export default function Dashboard({ data }) {
-  const { stats, expenses, insights, settings } = data;
+  const { stats, expenses, insights, settings, debts } = data;
   const [mode, setMode] = useState("month");
   const [offset, setOffset] = useState(0);
 
@@ -33,9 +33,9 @@ export default function Dashboard({ data }) {
         <Stat label="Total Spent" value={fmt(stats.totalSpent)} />
         <Stat label="Unpaid" value={fmt(stats.unpaid)} color="var(--rust)" />
         <Stat
-          label="Net Debt"
+          label={stats.netDebt >= 0 ? "Net Receivable" : "Net Payable"}
           value={fmt(Math.abs(stats.netDebt))}
-          color={stats.netDebt > 0 ? "var(--rust)" : "var(--forest)"}
+          color={stats.netDebt >= 0 ? "var(--forest)" : "var(--rust)"}
           icon={Scale}
         />
         <Stat label="Monthly Recurring" value={fmt(stats.monthlyRecurringTotal)} color="var(--gold)" icon={Repeat} />
@@ -121,6 +121,8 @@ export default function Dashboard({ data }) {
           </div>
         </div>
       </Panel>
+
+      <Panel title="Debt position"><div className="insights-numbers"><div className="insight-line"><span>Gross receivables</span><b className="mono">{fmt(stats.owedToMe)}</b></div><div className="insight-line"><span>Gross payables</span><b className="mono">{fmt(stats.owedByMe)}</b></div><div className="insight-line"><span>Net position</span><b className="mono" style={{color:stats.netDebt>=0?"var(--forest)":"var(--rust)"}}>{stats.netDebt>=0?"You are owed ":"You owe "}{fmt(Math.abs(stats.netDebt))}</b></div></div><div style={{marginTop:12}}>{Object.entries(debts.filter(d=>!d.settled).reduce((acc,d)=>{const k=(d.person||"Unknown").trim().toLowerCase();if(!acc[k])acc[k]={person:d.person,items:[],total:0,direction:d.direction};acc[k].items.push(d);acc[k].total+=Number(d.amount);return acc;},{})).map(([key,g])=><details key={key} style={{padding:"8px 0",borderTop:"1px solid var(--rule-light)"}}><summary style={{cursor:"pointer",fontSize:13}}>{g.person} · {g.direction==="i_owe"?"You owe":"Owes you"} · <b>{fmt(g.total)}</b> ({g.items.length})</summary>{g.items.map(d=><div key={d.id} style={{padding:"7px 8px",fontSize:12,color:"#6B655A"}}>{d.notes||"Debt entry"} · {fmt(d.amount)}{d.due_date?" · due "+d.due_date:""}</div>)}</details>)}</div></Panel>
 
       <Panel title="Upcoming Recurring (next 30 days)">
         {stats.upcoming30.length === 0 ? (
