@@ -91,6 +91,15 @@ export default function Entries({ data }) {
           );
         })
       )}
+      {editing && <div className="edit-overlay"><div className="edit-card"><div className="panel-title">Edit spend</div><div className="form-grid">
+        <div className="field"><label>Description</label><input value={editing.place} onChange={e=>setEditing({...editing,place:e.target.value})}/></div>
+        <div className="field"><label>Amount (₹)</label><input type="number" min="0.01" step="0.01" value={editing.amount} onChange={e=>setEditing({...editing,amount:e.target.value})}/></div>
+        <div className="field"><label>Category</label><input value={editing.category} onChange={e=>setEditing({...editing,category:e.target.value})}/></div>
+        <div className="field"><label>Method</label><select value={editing.method} onChange={e=>setEditing({...editing,method:e.target.value})}><option value="cash">Cash</option><option value="digital">Digital</option></select></div>
+        <div className="field"><label>Date</label><input type="date" value={editing.created_at} onChange={e=>setEditing({...editing,created_at:e.target.value})}/></div>
+        <div className="field"><label>Notes</label><input value={editing.notes} onChange={e=>setEditing({...editing,notes:e.target.value})}/></div>
+        <div className="field"><label>Status</label><select value={String(editing.paid)} onChange={e=>setEditing({...editing,paid:e.target.value==="true"})}><option value="true">Paid</option><option value="false">Unpaid</option></select></div></div>
+        <div style={{display:"flex",gap:8}}><button className="primary-btn" onClick={async()=>{if(!editing.place.trim()||!Number.isFinite(Number(editing.amount))||Number(editing.amount)<=0)return window.alert("Enter a description and positive amount.");const error=await data.updateExpense(editing.id,{place:editing.place,amount:Math.round(Number(editing.amount)*100)/100,category:editing.category,method:editing.method,notes:editing.notes||null,paid:editing.paid,created_at:new Date(editing.created_at+"T12:00:00").toISOString()});if(!error)setEditing(null);else window.alert(error.message);}}>Save changes</button><button className="chip" onClick={()=>setEditing(null)}>Cancel</button></div></div></div>}
     </div>
   );
 }
