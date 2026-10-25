@@ -8,6 +8,8 @@ import Debts from "./pages/Debts.jsx";
 import Recurring from "./pages/Recurring.jsx";
 import Entries from "./pages/Entries.jsx";
 import Profile from "./pages/Profile.jsx";
+import Planning from "./pages/Planning.jsx";
+import { UserRound } from "lucide-react";
 
 const TABS = [
   ["dashboard", "Dashboard"],
@@ -16,7 +18,7 @@ const TABS = [
   ["debts", "Debts"],
   ["recurring", "Recurring"],
   ["entries", "All Entries"],
-  ["profile", "Profile"],
+  ["planning", "Planning"],
 ];
 
 export default function Ledger({ user }) {
@@ -31,7 +33,7 @@ export default function Ledger({ user }) {
           <div className="ledger-title">The Ledger</div>
           <div className="ledger-sub">{user.email}</div>
         </div>
-        <button className="link-btn" onClick={signOut}>Sign out</button>
+        <button className="profile-icon" aria-label="Open account settings" title="Account & settings" onClick={() => setTab("profile")}><UserRound size={17} /></button>
       </div>
 
       <div className="tabs">
@@ -53,6 +55,7 @@ export default function Ledger({ user }) {
             {tab === "debts" && <Debts data={data} />}
             {tab === "recurring" && <Recurring data={data} />}
             {tab === "entries" && <Entries data={data} />}
+            {tab === "planning" && <Planning data={data} />}
             {tab === "profile" && <Profile user={user} data={data} />}
           </>
         )}
