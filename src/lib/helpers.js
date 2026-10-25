@@ -10,7 +10,7 @@ export const CAT_COLORS = {
 };
 
 export const fmt = (n) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
 
 export const dateBits = (d) => {
   const dt = new Date(d);
@@ -37,16 +37,16 @@ export function nextDueDate(rec) {
 
   if (rec.frequency === "yearly") {
     const month = Number(rec.due_month) - 1;
-    const day = Math.min(Number(rec.due_day), 28);
-    let d = new Date(today.getFullYear(), month, day);
-    if (d < today) d = new Date(today.getFullYear() + 1, month, day);
+    const day = Math.max(1, Number(rec.due_day) || 1);
+    let d = new Date(today.getFullYear(), month, Math.min(day, new Date(today.getFullYear(), month + 1, 0).getDate()));
+    if (d < today) { const year = today.getFullYear() + 1; d = new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate())); }
     return d;
   }
 
   // monthly
   const day = Math.min(Number(rec.due_day), 28);
-  let d = new Date(today.getFullYear(), today.getMonth(), day);
-  if (d < today) d = new Date(today.getFullYear(), today.getMonth() + 1, day);
+  let d = new Date(today.getFullYear(), today.getMonth(), Math.min(day, new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()));
+  if (d < today) { const year = today.getFullYear(), month = today.getMonth() + 1; d = new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate())); }
   return d;
 }
 
