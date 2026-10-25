@@ -44,7 +44,7 @@ export function nextDueDate(rec) {
   }
 
   // monthly
-  const day = Math.min(Number(rec.due_day), 28);
+  const day = Math.max(1, Number(rec.due_day) || 1);
   let d = new Date(today.getFullYear(), today.getMonth(), Math.min(day, new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()));
   if (d < today) { const year = today.getFullYear(), month = today.getMonth() + 1; d = new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate())); }
   return d;
