@@ -5,13 +5,28 @@ import { Panel, Empty, MethodTag } from "../components/UI";
 
 export default function Entries({ data }) {
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [method, setMethod] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [editing, setEditing] = useState(null);
   const { expenses } = data;
 
   const filtered = useMemo(() => {
-    if (filter === "paid") return expenses.filter((e) => e.paid);
-    if (filter === "unpaid") return expenses.filter((e) => !e.paid);
-    return expenses;
-  }, [expenses, filter]);
+    return expenses.filter((e) => {
+      if (filter === "paid" && !e.paid) return false;
+      if (filter === "unpaid" && e.paid) return false;
+      if (category !== "all" && e.category !== category) return false;
+      if (method !== "all" && e.method !== method) return false;
+      const d = String(e.created_at || "").slice(0,10);
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      const q = query.trim().toLowerCase();
+      if (q && ![e.place,e.notes,e.category,String(e.amount)].some(v => String(v || "").toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [expenses, filter, query, category, method, fromDate, toDate]);
 
   const exportCSV = () => {
     const rows = filtered.map((e) => ({
@@ -43,6 +58,13 @@ export default function Entries({ data }) {
           <button className="icon-btn" onClick={exportCSV} title="Export CSV"><Download size={13} /></button>
         </div>
       </div>
+      <div className="entry-filters">
+        <input aria-label="Search entries" placeholder="Search store, notes, category, amount…" value={query} onChange={e=>setQuery(e.target.value)} />
+        <select aria-label="Filter category" value={category} onChange={e=>setCategory(e.target.value)}><option value="all">All categories</option>{[...new Set(expenses.map(e=>e.category).filter(Boolean))].sort().map(c=><option key={c}>{c}</option>)}</select>
+        <select aria-label="Filter payment method" value={method} onChange={e=>setMethod(e.target.value)}><option value="all">All methods</option><option value="cash">Cash</option><option value="digital">Digital</option></select>
+        <input aria-label="From date" type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} />
+        <input aria-label="To date" type="date" value={toDate} onChange={e=>setToDate(e.target.value)} />
+      </div>
       {filtered.length === 0 ? (
         <Empty>Nothing here yet.</Empty>
       ) : (
@@ -63,7 +85,8 @@ export default function Entries({ data }) {
                 {e.paid ? "Paid" : "Unpaid"}
               </button>
               <div className="row-amount">{fmt(e.amount)}</div>
-              <button className="icon-btn" onClick={() => data.deleteExpense(e.id)} title="Delete"><Trash2 size={13} /></button>
+              <button className="icon-btn" onClick={() => setEditing({id:e.id,place:e.place||"",amount:String(e.amount),category:e.category||"Other",method:e.method||"digital",notes:e.notes||"",paid:!!e.paid,created_at:String(e.created_at||"").slice(0,10)})} title="Edit">✎</button>
+              <button className="icon-btn" onClick={() => { if (window.confirm("Delete this spend? This cannot be undone.")) data.deleteExpense(e.id); }} title="Delete"><Trash2 size={13} /></button>
             </div>
           );
         })
