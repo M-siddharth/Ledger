@@ -206,3 +206,12 @@ body {
 @supports (padding: max(0px)) {
   .ledger-app { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* Ledger v4 */
+.profile-icon { width:36px;height:36px;border:1px solid #394148;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#171C20;color:var(--text-ink);cursor:pointer; }
+.profile-icon:hover { border-color:var(--gold); color:var(--gold); }
+.entry-filters { display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;margin:12px 0 14px; }
+.entry-filters input,.entry-filters select { min-width:0;width:100%;padding:8px 9px;border:1px solid var(--rule-light);border-radius:7px;background:#fff;color:var(--text-paper);font:12px Inter,sans-serif; }
+.edit-overlay { position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;padding:18px; }
+.edit-card { width:min(620px,100%);max-height:90vh;overflow:auto;background:var(--paper);color:var(--text-paper);padding:22px;border-radius:14px;box-shadow:0 20px 70px #0008; }
+@media(max-width:700px) { .entry-filters { grid-template-columns:1fr 1fr; } .entry-filters input:first-child { grid-column:1/-1; } }
