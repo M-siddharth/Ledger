@@ -1,12 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const url = import.meta.env.VITE_SUPABASE_URL?.trim();
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-if (!url || !key) {
-  console.warn(
-    "Missing Supabase env vars. Copy .env.example to .env.local and fill in your project URL and anon key."
-  );
-}
-
-export const supabase = createClient(url, key);
+// Do not initialize Supabase with undefined values: that can crash the app
+// before React renders and leave the browser showing a blank page.
+export const supabase = url && key ? createClient(url, key) : null;
+export const hasSupabaseConfig = Boolean(url && key);
