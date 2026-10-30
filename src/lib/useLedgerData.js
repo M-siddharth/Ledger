@@ -15,6 +15,7 @@ export function useLedgerData(user) {
   const [savingsGoals, setSavingsGoals] = useState([]);
   const [customCategories, setCustomCategories] = useState([]);
   const [customPaymentMethods, setCustomPaymentMethods] = useState([]);
+  const [activityLog, setActivityLog] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
@@ -31,13 +32,14 @@ export function useLedgerData(user) {
     if (!d.error) setDebts(d.data || []);
     if (!r.error) setRecurring(r.data || []);
     if (!i.error) setIncome(i.data || []);
-    const [a, t, b, g, cc, pm] = await Promise.all([
+    const [a, t, b, g, cc, pm, al] = await Promise.all([
       supabase.from("balance_adjustments").select("*").order("created_at", { ascending: false }),
       supabase.from("balance_transfers").select("*").order("created_at", { ascending: false }),
       supabase.from("budgets").select("*").order("created_at", { ascending: false }),
       supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
       supabase.from("custom_categories").select("*").order("name"),
       supabase.from("custom_payment_methods").select("*").order("name"),
+      supabase.from("activity_log").select("*").order("changed_at", { ascending: false }).limit(500),
     ]);
     if (!a.error) setAdjustments(a.data || []);
     if (!t.error) setTransfers(t.data || []);
@@ -45,6 +47,7 @@ export function useLedgerData(user) {
     if (!g.error) setSavingsGoals(g.data || []);
     if (!cc.error) setCustomCategories(cc.data || []);
     if (!pm.error) setCustomPaymentMethods(pm.data || []);
+    if (!al.error) setActivityLog(al.data || []);
     if (!s.error && s.data) {
       setSettings({ manual_datetime: s.data.manual_datetime, recent_spends_count: s.data.recent_spends_count });
     }
@@ -286,7 +289,7 @@ export function useLedgerData(user) {
   }, [expenses, income, debts]);
 
   return {
-    expenses, debts, recurring, income, adjustments, transfers, budgets, savingsGoals, customCategories, customPaymentMethods, loading, stats, balanceHistory, insights,
+    expenses, debts, recurring, income, adjustments, transfers, budgets, savingsGoals, customCategories, customPaymentMethods, activityLog, loading, stats, balanceHistory, insights,
     settings, saveSettings,
     addExpense, updateExpense, deleteExpense,
     addIncome, deleteIncome,
