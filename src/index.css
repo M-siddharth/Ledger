@@ -215,3 +215,37 @@ body {
 .edit-overlay { position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;padding:18px; }
 .edit-card { width:min(620px,100%);max-height:90vh;overflow:auto;background:var(--paper);color:var(--text-paper);padding:22px;border-radius:14px;box-shadow:0 20px 70px #0008; }
 @media(max-width:700px) { .entry-filters { grid-template-columns:1fr 1fr; } .entry-filters input:first-child { grid-column:1/-1; } }
+
+
+/* Ledger v5: compact mobile-first refinements */
+.chart-open { border:0; background:transparent; width:100%; cursor:pointer; font:inherit; text-transform:uppercase; }
+.chart-open:hover { color:var(--forest); }
+.planning-record { padding:12px 0; border-bottom:1px solid var(--rule-light); }
+.record-head { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
+.progress-track { height:7px; background:#E6DFCE; border-radius:8px; margin-top:8px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--forest); border-radius:8px; }
+.record-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:7px; }
+.history-list { margin-top:12px; }
+.insight-detail { width:min(760px,100%); }
+.detail-bars { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ledger-app { width:100%; overflow-x:hidden; }
+button,input,select { touch-action:manipulation; }
+@media(max-width:640px) {
+ .ledger-header { align-items:center; }
+ .tabs { padding:0 8px; scrollbar-width:thin; }
+ .content { padding:12px 10px 28px; }
+ .stat-row { gap:8px; }
+ .stat-card { padding:12px; min-width:0; }
+ .stat-value { font-size:17px; overflow-wrap:anywhere; }
+ .panel { padding:15px 13px; border-radius:12px; }
+ .ledger-row { gap:8px; }
+ .leader { display:none; }
+ .row-main { min-width:calc(100% - 58px); }
+ .row-amount { margin-left:auto; }
+ .detail-bars { grid-template-columns:1fr; }
+ .edit-overlay { padding:8px; }
+ .edit-card { padding:15px; max-height:94dvh; }
+ .entry-filters { grid-template-columns:1fr 1fr; }
+ .form-grid { grid-template-columns:1fr; }
+ .primary-btn { min-height:44px; }
+}
