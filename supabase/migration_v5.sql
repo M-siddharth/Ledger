@@ -51,7 +51,7 @@ begin
   else
     old_json := to_jsonb(old);
     row_user_id := (old_json ->> 'user_id')::uuid;
-    row_id := old_json ->> 'id';
+    row_id := coalesce(old_json ->> 'id', old_json ->> 'user_id');
     insert into public.activity_log(user_id, table_name, record_id, action, old_data)
     values(row_user_id, tg_table_name, row_id, 'deleted', old_json);
     return old;
