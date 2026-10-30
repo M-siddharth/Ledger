@@ -89,6 +89,20 @@ export function useLedgerData(user) {
     if (!error) await loadAll();
     return error;
   };
+  const updatePlanningRecord = async (table, id, patch) => {
+    const allowed = ["balance_adjustments","balance_transfers","budgets","savings_goals","custom_categories","custom_payment_methods"];
+    if (!allowed.includes(table)) return new Error("Unsupported record type");
+    const { error } = await supabase.from(table).update(patch).eq("id", id);
+    if (!error) await loadAll();
+    return error;
+  };
+  const deletePlanningRecord = async (table, id) => {
+    const allowed = ["balance_adjustments","balance_transfers","budgets","savings_goals","custom_categories","custom_payment_methods"];
+    if (!allowed.includes(table)) return new Error("Unsupported record type");
+    const { error } = await supabase.from(table).delete().eq("id", id);
+    if (!error) await loadAll();
+    return error;
+  };
   const saveCustomLabel = async (table, payload) => {
     const { error } = await supabase.from(table).insert({ user_id: user.id, ...payload });
     if (!error) await loadAll();
@@ -295,7 +309,7 @@ export function useLedgerData(user) {
     addIncome, deleteIncome,
     addDebt, deleteDebt, settleDebt, unsettleDebt,
     addRecurring, toggleRecurringActive, deleteRecurring,
-    addBalanceAdjustment, addTransfer, addBudget, addSavingsGoal, deleteSavingsGoal, saveCustomLabel,
+    addBalanceAdjustment, addTransfer, addBudget, addSavingsGoal, deleteSavingsGoal, updatePlanningRecord, deletePlanningRecord, saveCustomLabel,
     refresh: loadAll,
   };
 }
