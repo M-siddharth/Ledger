@@ -17,6 +17,7 @@ export default function Dashboard({ data }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailMode, setDetailMode] = useState("day");
   const [detailCategory, setDetailCategory] = useState("all");
+  const [detailType, setDetailType] = useState("expense");
 
   const range = useMemo(() => {
     if (mode === "week") return getWeekRange(offset);
@@ -28,7 +29,8 @@ export default function Dashboard({ data }) {
   const recentCount = settings.recent_spends_count || 5;
 
   const changeMode = (m) => { setMode(m); setOffset(0); };
-  const detailRows = expenses.filter(e => (detailCategory === "all" || e.category === detailCategory) && (!range || (new Date(e.created_at) >= range.start && new Date(e.created_at) <= range.end))).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,20);
+  const sourceRows = detailType === "income" ? (data.income || []) : expenses;
+  const detailRows = sourceRows.filter(e => (detailCategory === "all" || (detailType === "income" ? e.source === detailCategory : e.category === detailCategory)) && (!range || (new Date(e.created_at) >= range.start && new Date(e.created_at) <= range.end))).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,20);
   const grouped = detailRows.reduce((acc,e) => { const d=new Date(e.created_at); let key; if(detailMode==="month") key=d.toLocaleDateString(undefined,{month:"long",year:"numeric"}); else if(detailMode==="week"){const x=new Date(d);x.setDate(x.getDate()-((x.getDay()+6)%7));key="Week of "+x.toLocaleDateString();} else key=d.toLocaleDateString(); acc[key]=(acc[key]||0)+Number(e.amount); return acc; },{});
 
   return (
@@ -93,7 +95,7 @@ export default function Dashboard({ data }) {
 
         <div className="charts-grid">
           <div>
-            <button type="button" className="chart-label chart-open" onClick={() => setDetailOpen(true)}>Spending by Category · Tap for details ↗</button>
+            <button type="button" className="chart-label chart-open" onClick={() => {setDetailType("expense");setDetailOpen(true);}}>Spending by Category · Tap for details ↗</button>
             {ins.byCategory.length > 0 ? (
               <ResponsiveContainer width="100%" height={190}>
                 <PieChart>
@@ -109,7 +111,7 @@ export default function Dashboard({ data }) {
             )}
           </div>
           <div>
-            <button type="button" className="chart-label chart-open" onClick={() => setDetailOpen(true)}>Income by Source · Tap for details ↗</button>
+            <button type="button" className="chart-label chart-open" onClick={() => {setDetailType("income");setDetailOpen(true);}}>Income by Source · Tap for details ↗</button>
             {ins.bySource.length > 0 ? (
               <ResponsiveContainer width="100%" height={190}>
                 <PieChart>
@@ -132,11 +134,11 @@ export default function Dashboard({ data }) {
           <div className="panel-title">Detailed insights <button className="icon-btn" onClick={() => setDetailOpen(false)}>Close ✕</button></div>
           <div className="form-grid">
             <div className="field"><label>Group by</label><select value={detailMode} onChange={e => setDetailMode(e.target.value)}><option value="day">Day-wise</option><option value="week">Week-wise</option><option value="month">Month-wise</option></select></div>
-            <div className="field"><label>Category</label><select value={detailCategory} onChange={e => setDetailCategory(e.target.value)}><option value="all">All categories</option>{[...new Set(expenses.map(e => e.category).filter(Boolean))].sort().map(x => <option key={x}>{x}</option>)}</select></div>
+            <div className="field"><label>{detailType === "income" ? "Source" : "Category"}</label><select value={detailCategory} onChange={e => setDetailCategory(e.target.value)}><option value="all">All categories</option>{[...new Set((detailType === "income" ? (data.income||[]).map(e=>e.source) : expenses.map(e => e.category)).filter(Boolean))].sort().map(x => <option key={x}>{x}</option>)}</select></div>
           </div>
           <div className="detail-bars">{Object.entries(grouped).map(([key,value]) => <div className="planning-record" key={key}><div className="record-head"><b>{key}</b><b>{fmt(value)}</b></div><div className="progress-track"><div className="progress-fill" style={{width:(value/Math.max(1,...Object.values(grouped))*100)+"%"}} /></div></div>)}</div>
           <h3>Latest 20 entries</h3>
-          {detailRows.length === 0 ? <Empty>No entries in this selection.</Empty> : detailRows.map(e => <div className="ledger-row" key={e.id}><div className="row-main"><b>{e.place}</b><div className="row-meta">{e.category} · {new Date(e.created_at).toLocaleString()} · {e.paid ? "Paid" : "Unpaid"}</div></div><b className="row-amount">{fmt(e.amount)}</b></div>)}
+          {detailRows.length === 0 ? <Empty>No entries in this selection.</Empty> : detailRows.map(e => <div className="ledger-row" key={e.id}><div className="row-main"><b>{detailType === "income" ? e.source : e.place}</b><div className="row-meta">{detailType === "income" ? "Income" : e.category} · {new Date(e.created_at).toLocaleString()} · {detailType === "income" ? (e.method||"") : (e.paid ? "Paid" : "Unpaid")}</div></div><b className="row-amount">{fmt(e.amount)}</b></div>)}
         </div>
       </div>}
       <Panel title="Debt position"><div className="insights-numbers"><div className="insight-line"><span>Gross receivables</span><b className="mono">{fmt(stats.owedToMe)}</b></div><div className="insight-line"><span>Gross payables</span><b className="mono">{fmt(stats.owedByMe)}</b></div><div className="insight-line"><span>Net position</span><b className="mono" style={{color:stats.netDebt>=0?"var(--forest)":"var(--rust)"}}>{stats.netDebt>=0?"You are owed ":"You owe "}{fmt(Math.abs(stats.netDebt))}</b></div></div><div style={{marginTop:12}}>{Object.entries(debts.filter(d=>!d.settled).reduce((acc,d)=>{const k=(d.person||"Unknown").trim().toLowerCase();if(!acc[k])acc[k]={person:d.person,items:[],total:0,direction:d.direction};acc[k].items.push(d);acc[k].total+=Number(d.amount);return acc;},{})).map(([key,g])=><details key={key} style={{padding:"8px 0",borderTop:"1px solid var(--rule-light)"}}><summary style={{cursor:"pointer",fontSize:13}}>{g.person} · {g.direction==="i_owe"?"You owe":"Owes you"} · <b>{fmt(g.total)}</b> ({g.items.length})</summary>{g.items.map(d=><div key={d.id} style={{padding:"7px 8px",fontSize:12,color:"#6B655A"}}>{d.notes||"Debt entry"} · {fmt(d.amount)}{d.due_date?" · due "+d.due_date:""}</div>)}</details>)}</div></Panel>
