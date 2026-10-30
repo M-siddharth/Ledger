@@ -9,6 +9,7 @@ import Recurring from "./pages/Recurring.jsx";
 import Entries from "./pages/Entries.jsx";
 import Profile from "./pages/Profile.jsx";
 import Planning from "./pages/Planning.jsx";
+import Activity from "./pages/Activity.jsx";
 import { UserRound } from "lucide-react";
 
 const TABS = [
@@ -19,6 +20,7 @@ const TABS = [
   ["recurring", "Recurring"],
   ["entries", "All Entries"],
   ["planning", "Planning"],
+  ["activity", "Activity"],
 ];
 
 export default function Ledger({ user }) {
@@ -56,6 +58,7 @@ export default function Ledger({ user }) {
             {tab === "recurring" && <Recurring data={data} />}
             {tab === "entries" && <Entries data={data} />}
             {tab === "planning" && <Planning data={data} />}
+            {tab === "activity" && <Activity data={data} />}
             {tab === "profile" && <Profile user={user} data={data} />}
           </>
         )}
