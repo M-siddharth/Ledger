@@ -65,7 +65,7 @@ begin
   foreach t in array array[
     'expenses','income','debts','recurring','balance_adjustments',
     'balance_transfers','budgets','savings_goals',
-    'custom_categories','custom_payment_methods'
+    'custom_categories','custom_payment_methods','user_settings'
   ] loop
     if to_regclass(format('public.%I', t)) is not null then
       execute format('drop trigger if exists ledger_audit_changes on public.%I', t);
